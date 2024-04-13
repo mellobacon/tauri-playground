@@ -68,14 +68,16 @@ async fn async_create_shell(state: State<'_, Arc<AsyncMutex<AppState>>>) -> Resu
 
 #[tauri::command]
 async fn async_write_to_pty(data: &str, terminal_id: usize, state: State<'_, Arc<AsyncMutex<AppState>>>) -> Result<(), ()> {
-    let app_state = match state.try_lock() {
-        Ok(s)=> s,
-        Err(e) => {
-            print!("{}", e);
-            todo!()
-        }
-    };
-    println!("{}: {}", terminal_id, data);
+    let app_state = state.lock().await;
+    for t in &app_state.terminals {
+        println!("{}", t.0);
+    }
+    if let Some((_, writer, _)) = app_state.terminals.get(&terminal_id) {
+        println!("should write data");
+        write!(writer.lock().await, "{}", data).map_err(|_| ())?;
+    } else {
+        println!("Terminal with ID {} not found", terminal_id);
+    }
     Ok(())
 }
 
