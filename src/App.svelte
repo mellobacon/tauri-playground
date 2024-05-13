@@ -1,16 +1,52 @@
 <script lang="ts">
-	import Terminal from "../src/lib/Terminal.svelte";
+	import { appWindow } from '@tauri-apps/api/window'
+    import Terminal, { PtyTerminal } from '../src/lib/Terminal.svelte';
+	import { invoke } from "@tauri-apps/api";
 
-	$: boxes = [];
+	let terminals: PtyTerminal[] = [];
+
+	$: terms = terminals;
+
+	let id = 0;
 	function add() {
-		boxes = [...boxes, "e"]
+		let term = new PtyTerminal(id, "Cascadia Mono", 14, {
+			background: "rgb(4, 47, 47)",
+			foreground: "white"
+		});
+		terminals = [...terminals, term];
+		id++;
+	}
+	function remove() {
+		let x = terminals.pop();
+		x?.kill();
+		terms = terminals;
+	}
+	function send() {
+		appWindow.emit("button", {
+			message: "test"
+		})
+	}
+
+	function but1(){
+		invoke("test1");
+	}
+
+	function but2(){
+		invoke("test2");
+		appWindow.emit("test2");
 	}
 </script>
 <button on:click={add}>Add terminal</button>
+<button on:click={remove}>Remove terminal</button>
+<button on:click={send}>Send event</button>
+<button on:click={but1}>button1</button>
+<button on:click={but2}>button2</button>
+
+
 <div class="app">
-	{#each boxes as _}
+	{#each terms as box}
 		<div class="box">
-			<Terminal />
+			<Terminal term={box}></Terminal>
 		</div>
 	{/each}
 </div>
